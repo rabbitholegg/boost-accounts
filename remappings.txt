@@ -1,0 +1,10 @@
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@account-abstraction/contracts/=lib/account-abstraction/contracts/
+@webauthn/contracts/=lib/webauthn-sol/src/
+@solady/contracts/=lib/solady/src/
+@rs256verify/contracts/=lib/RS256Verify/contracts/
+account-abstraction/=lib/account-abstraction/contracts/
+ds-test/=lib/openzeppelin-contracts/lib/forge-std/lib/ds-test/src/
+erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
+forge-std/=lib/forge-std/src/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
