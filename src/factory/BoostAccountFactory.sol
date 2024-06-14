@@ -5,8 +5,6 @@ import "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
-import "../BaseAccount.sol";
-
 /**
  * @title BoostAccountFactory
  * @notice A factory contract to create Boost Accounts
@@ -73,10 +71,10 @@ contract BoostAccountFactory is Ownable {
     function proxyCode() external view returns (bytes memory) {
         return _proxyCode(WALLET_IMPLEMENTATION);
     }
+
     /**
      * @notice  using solay ERC1967 https://github.com/Vectorized/solady/blob/5eff720c27746987dc95e5e2b720615d3d96f7ee/src/utils/LibClone.sol#L774C18-L774C18
      */
-
     function _proxyCode(address implementation) private pure returns (bytes memory deploymentData) {
         deploymentData = abi.encodePacked(
             hex"603d3d8160223d3973",

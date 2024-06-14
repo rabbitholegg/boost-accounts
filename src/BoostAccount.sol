@@ -10,36 +10,37 @@ import {SignatureDecoder} from "./utils/SignatureDecoder.sol";
 import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-import "./base/ERC1271Handler.sol";
 import {MultiOwnerManager} from "./base/MultiOwnerManager.sol";
 import {ExtensionManager} from "./base/ExtensionManager.sol";
 import {Hookable} from "./core/Hookable.sol";
 import {UpgradeManager} from "./base/UpgradeManager.sol";
 
 /**
- * @title 
- * @dev This contract is the main entry point for the . It implements the IAccount and IERC1271 interfaces,
- * and is compatible with the ERC-4337 standard.
- * It inherits from multiple base contracts and managers to provide the core functionality of the wallet.
- * This includes managing entry points, owners, extensions, hooks, and upgrades, as well as handling ERC1271 signatures and providing a fallback function.
+ * @title BoostAccount
+ * @notice This is the standard account implementation for Boost Accounts. It's a multi-owner account with support for EIP1271 contract signatures, a flexible, unopinionated extension system, various hookable flows, and upgradeability.
+ * @dev This and much of the Boost Accounts system is heavily inspired by implementations including Coinbase's Smart Wallet, Alchemy's AA Kit and Embedded Accounts, Pimlico's Smart Accounts, Soul Wallet, Biconomy's Modular Smart Accounts, and others. Credit for the ideas and implementations goes to the respective teams.
  */
 contract BoostAccount is
     Initializable,
     IAccount,
     IERC1271,
     HasEntrypoint,
-    MultiOwnerManager,
-    ExtensionManager,
     Hookable,
+    ExtensionManager,
+    MultiOwnerManager,
+    UpgradeManager,
     StandardExecutor,
     Validatable,
-    UpgradeManager,
-    FallbackHandler,
-    ERC1271Handler
+    FallbackHandler
 {
     error NoUpgradeLogicDefined();
 
     address internal immutable _DEFAULT_VALIDATOR;
+
+    bytes32 private constant BOOST_ACCOUNT_MSG_TYPEHASH = keccak256("BoostAccountMessage(bytes32 message)");
+
+    bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH =
+        keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
 
     constructor(address _entryPoint, address defaultValidator) HasEntrypoint(_entryPoint) {
         _DEFAULT_VALIDATOR = defaultValidator;
@@ -104,6 +105,20 @@ contract BoostAccount is
         returns (address validator, bytes calldata validatorSignature, bytes calldata hookSignature)
     {
         return SignatureDecoder.signatureSplit(signature);
+    }
+
+    function _encodeRawHash(bytes32 rawHash) internal view returns (bytes32) {
+        bytes32 encode1271MessageHash = keccak256(abi.encode(BOOST_ACCOUNT_MSG_TYPEHASH, rawHash));
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, getChainId(), address(this)));
+        return keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator, encode1271MessageHash));
+    }
+
+    function getChainId() public view returns (uint256) {
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        return id;
     }
 
     function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)

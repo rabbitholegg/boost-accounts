@@ -15,16 +15,11 @@ abstract contract ExtensionManager is IExtensionManager, Extendable {
         _addExtension(extensionAndData);
     }
 
-    /**
-     * The current function is inside the
-     * `function _installExtension(address extensionAddress, bytes memory initData, bytes4[] memory selectors)`
-     */
     function _isSupportsExtensionInterface(address extensionAddress) internal view override returns (bool supported) {
         supported = false;
         bytes memory callData =
             abi.encodeWithSelector(IERC165.supportsInterface.selector, type(IBoostAccountExtension).interfaceId);
         assembly ("memory-safe") {
-            // memorySafe: The scratch space between memory offset 0 and 64.
             let result := staticcall(gas(), extensionAddress, add(callData, 0x20), mload(callData), 0x00, 0x20)
             if gt(result, 0) { supported := mload(0x00) }
         }
